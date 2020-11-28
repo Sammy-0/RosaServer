@@ -48,21 +48,23 @@ static void pryMemory(void* address, size_t numPages)
 	}
 }
 
-/*static subhook::Hook _test_hook;
-typedef int(*_test_func)(int, Vector*, RotMatrix*, Vector*, Vector*, float);
+static subhook::Hook _test_hook;
+typedef void(*_test_func)(int, int, int, int, int, short*);
 static _test_func _test;
 
-int h__test(int type, Vector* pos, RotMatrix* rot, Vector* vel, Vector* scale, float mass) {
-	sol::protected_function func = (*lua)["hook"]["run"];
-	if (func != sol::nil)
-	{
-		auto res = func("Test", type, pos, rot, vel, scale, mass);
-		noLuaCallError(&res);
+void h__test(int a, int b, int c, int d, int e, short* f) {
+	if (e & 0x40000000) {
+		printf("area_createblock(%d, %d, %d, %d, %d, ...)\n", a, b, c, d, e);
+		printf("  f = ");
+		for (int i = 0; i < 8; i++) {
+			printf("%d\t", f[i]);
+		}
+		printf("\n");
 	}
 
 	subhook::ScopedHookRemove remove(&_test_hook);
-	return _test(type, pos, rot, vel, scale, mass);
-}*/
+	_test(a, b, c, d, e, f);
+}
 
 struct Server
 {
@@ -1020,7 +1022,7 @@ static inline void locateMemory(unsigned long base)
 	numStreets = (unsigned int*)(base + 0x3C31102C);
 	numStreetIntersections = (unsigned int*)(base + 0x3C2EF024);
 
-	//_test = (_test_func)(base + 0x4cc90);
+	_test = (_test_func)(base + 0x11760);
 	//pryMemory(&_test, 2);
 
 	subrosa_puts = (subrosa_puts_func)(base + 0x1CF0);
@@ -1111,7 +1113,7 @@ static inline void installHook(
 
 static inline void installHooks()
 {
-	//_test_hook.Install((void*)_test, (void*)h__test, HOOK_FLAGS);
+	installHook("_test_hook", _test_hook, (void*)_test, (void*)h__test);
 	installHook("subrosa_puts_hook", subrosa_puts_hook, (void*)subrosa_puts, (void*)h_subrosa_puts);
 	installHook("subrosa___printf_chk_hook", subrosa___printf_chk_hook, (void*)subrosa___printf_chk, (void*)h_subrosa___printf_chk);
 
